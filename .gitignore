@@ -1,0 +1,5 @@
+.vscode
+output
+*.csv
+tester
+*.o
