@@ -25,8 +25,21 @@ struct sort_entry
     std::string name;
 };
 
+/**
+ * @brief Performs a single run of the algorithm on the given data
+ * @param algorithm
+ * @param data
+ * @return number of milliseconds to complete
+ */
 std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm, const std::vector<int> &data);
-size_t test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std::vector<int> &data, size_t count);
+/**
+ * @brief Performs [count] runs of the algorithm on the data
+ * @param algorithm
+ * @param data
+ * @param count
+ * @return Average number of milliseconds to complete
+ */
+std::chrono::milliseconds test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std::vector<int> &data, size_t count, double tolerance = 5);
 
 size_t test_ints_random_1_sec(sorting_algorithm<int> algorithm, std::string name);
 template <size_t count>
@@ -85,10 +98,20 @@ int main()
 
     constexpr size_t algorithm_count = 1;
 
-    for (size_t i = 0; i < algorithm_count; i++)
-    {
-        test_ints_random_1_sec(int_algorithms[i].algorithm, int_algorithms[i].name);
-    }
+    // std::vector<int> data;
+    // std::minstd_rand gen;
+    // for (size_t i = 0; i < 8000; i++)
+    // {
+    //     data.push_back(gen());
+    // }
+    // auto val = test_ints_perform_run_n_times(Bubble_Sort<int>, data, 100, 5).count();
+    // std::cout << "Time: " << val << std::endl;
+    // return 0;
+
+    // for (size_t i = 0; i < algorithm_count; i++)
+    // {
+    //     test_ints_random_1_sec(int_algorithms[i].algorithm, int_algorithms[i].name);
+    // }
 
     bool continue_run[algorithm_count];
     for (size_t i = 0; i < algorithm_count; i++)
@@ -502,7 +525,7 @@ size_t test_ints_all_same_fixed_size_N(sorting_algorithm<int> algorithm, std::st
     return average_time;
 }
 
-size_t test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std::vector<int> &data, size_t count)
+std::chrono::milliseconds test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std::vector<int> &data, size_t count, double tolerance)
 {
     std::vector<std::chrono::milliseconds> times;
     times.resize(count);
@@ -520,12 +543,27 @@ size_t test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std
     while (recheck)
     {
         recheck = false;
-        auto average = (std::accumulate(times.begin(), times.end(), std::chrono::milliseconds(0)) / static_cast<int64_t>(count)).count();
+        auto average = std::accumulate(times.begin(), times.end(), std::chrono::milliseconds(0)) / count;
         for (auto &time : times)
         {
-            double percent_error = (std::abs(time.count() - average) / average) * 100;
+            double percent_error = (std::abs(static_cast<double>(time.count()) - static_cast<double>(average.count())) / static_cast<double>(average.count())) * 100;
+            //  = (std::abs(static_cast<int64_t>((time - average).count())) / average.count()) * 100;
+            std::cout << "% error: " << percent_error << std::endl;
+            if (percent_error > tolerance)
+            {
+                std::cout << percent_error << std::endl;
+                recheck = true;
+                std::cout << "Rejecting run. Possible outlier. Time: " << time.count() << "\tAvg: " << average.count() << std::endl;
+                std::chrono::milliseconds new_time;
+                do
+                {
+                    new_time = test_ints_perform_run(algorithm, data);
+                } while (new_time < std::chrono::milliseconds(0));
+                time = new_time;
+            }
         }
     }
+    return std::accumulate(times.begin(), times.end(), std::chrono::milliseconds(0)) / count;
 }
 
 std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm, const std::vector<int> &data)
@@ -535,4 +573,5 @@ std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm
     algorithm(data_copy.data(), 0, data_copy.size() - 1);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    return duration;
 }
