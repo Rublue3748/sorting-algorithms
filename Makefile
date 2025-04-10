@@ -2,7 +2,7 @@
 
 flags = -O3 -g -Wall --std=c++17
 
-tester: tester.o
+tester: tester.o tests.o
 	g++ $(flags) -o $@ $^
 
 %.o: %.cpp
