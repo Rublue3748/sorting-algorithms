@@ -25,6 +25,15 @@ struct sort_entry
     std::string name;
 };
 
+template <size_t T>
+void set_all_running(std::array<bool, T> &arr, bool value) { std::fill(arr.begin(), arr.end(), value); }
+template <size_t T>
+bool should_continue_running(std::array<bool, T> &arr)
+{
+    return std::any_of(arr.begin(), arr.end(), [](const bool &val)
+                       { return val; });
+}
+
 /**
  * @brief Performs a single run of the algorithm on the given data
  * @param algorithm
@@ -41,7 +50,21 @@ std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm
  */
 std::chrono::milliseconds test_ints_perform_run_n_times(sorting_algorithm<int> algorithm, const std::vector<int> &data, size_t count, double tolerance = 5);
 
+// TODO: Fix this to use above and possibly time prediction
 size_t test_ints_random_1_sec(sorting_algorithm<int> algorithm, std::string name);
+
+// TODO: Replace ALL OF THIS
+
+/**
+ * @brief
+ * @param algorithm
+ * @param n
+ * @param test_count
+ * @param tolerance
+ * @return
+ */
+std::chrono::milliseconds test_ints_random_fixed_size(sorting_algorithm<int> algorithm, size_t n, size_t test_count = 10, double tolerance = 5);
+
 template <size_t count>
 size_t test_ints_random_fixed_size_N(sorting_algorithm<int> algorithm, std::string name);
 template <size_t count>
@@ -96,28 +119,41 @@ int main()
         {Quick_Sort<int>, "Quick_Sort"},
         {Randomized_Quick_Sort<int>, "Randomized_Quick_Sort"}};
 
-    constexpr size_t algorithm_count = 1;
+    constexpr size_t algorithm_count = 11;
 
-    // std::vector<int> data;
-    // std::minstd_rand gen;
-    // for (size_t i = 0; i < 8000; i++)
-    // {
-    //     data.push_back(gen());
-    // }
-    // auto val = test_ints_perform_run_n_times(Bubble_Sort<int>, data, 100, 5).count();
-    // std::cout << "Time: " << val << std::endl;
-    // return 0;
+    // Fixed random array test
+    std::array<bool, algorithm_count> continue_run;
+    set_all_running(continue_run, true);
+    size_t current_test_size = 10000;
+    while (should_continue_running(continue_run))
+    {
+        for (size_t i = 0; i < algorithm_count; i++)
+        {
+            std::cout << int_algorithms[i].name << ": ";
+            if (continue_run[i])
+            {
+                auto duration = test_ints_random_fixed_size(int_algorithms[i].algorithm, current_test_size);
+                std::cout << "took " << duration.count() << "ms to perform " << current_test_size << " random test" << std::endl;
+                if (duration.count() > 200)
+                {
+                    continue_run[i] = false;
+                }
+            }
+            else
+            {
+                std::cout << "skipping " << current_test_size << " random test" << std::endl;
+            }
+        }
+        current_test_size *= 2;
+    }
 
-    // for (size_t i = 0; i < algorithm_count; i++)
-    // {
-    //     test_ints_random_1_sec(int_algorithms[i].algorithm, int_algorithms[i].name);
-    // }
-
-    bool continue_run[algorithm_count];
     for (size_t i = 0; i < algorithm_count; i++)
     {
-        continue_run[i] = true;
+        test_ints_random_1_sec(int_algorithms[i].algorithm, int_algorithms[i].name);
     }
+
+    return 0;
+
     for (size_t i = 0; i < algorithm_count; i++)
     {
         if (continue_run[i])
@@ -306,7 +342,6 @@ size_t test_ints_random_1_sec(sorting_algorithm<int> algorithm, std::string name
     std::chrono::milliseconds duration(0);
     size_t n = 0;
     std::vector<int> current_data;
-    // int64_t previous_time = 0;
     size_t increment = 50;
 
     std::stringstream directory;
@@ -326,7 +361,7 @@ size_t test_ints_random_1_sec(sorting_algorithm<int> algorithm, std::string name
     {
         if (n % (increment * 10) == 0)
         {
-            std::cout << n << std::endl;
+            // std::cout << n << std::endl;
         }
         if (n == 10000)
         {
@@ -345,24 +380,7 @@ size_t test_ints_random_1_sec(sorting_algorithm<int> algorithm, std::string name
         {
             current_data.push_back(int_distr(rng));
         }
-        std::shuffle(current_data.begin(), current_data.end(), shuffler);
-        auto start = std::chrono::high_resolution_clock::now();
-
-        algorithm(current_data.data(), 0, n - 1);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        if (!std::is_sorted(current_data.begin(), current_data.end()))
-        {
-            std::cout << name << " - Sorting error. Aborting" << std::endl;
-            std::cout << "Array: ";
-            for (auto iter = current_data.begin(); iter != current_data.end(); iter++)
-            {
-                std::cout << *iter << ", ";
-            }
-            std::cout << std::endl;
-            return 0;
-        }
+        duration = test_ints_perform_run_n_times(algorithm, current_data, 10);
         out << n << "," << duration.count() << "\n";
     } while (!(duration.count() > 1000 && duration.count() < 1100) && n != SIZE_MAX);
     out.close();
@@ -534,7 +552,7 @@ std::chrono::milliseconds test_ints_perform_run_n_times(sorting_algorithm<int> a
         times[i] = test_ints_perform_run(algorithm, data);
         if (times[i].count() < 0)
         {
-            std::cout << "Rejecting run. Negative time." << std::endl;
+            // std::cout << "Rejecting run. Negative time." << std::endl;
             i--;
             continue;
         }
@@ -548,12 +566,12 @@ std::chrono::milliseconds test_ints_perform_run_n_times(sorting_algorithm<int> a
         {
             double percent_error = (std::abs(static_cast<double>(time.count()) - static_cast<double>(average.count())) / static_cast<double>(average.count())) * 100;
             //  = (std::abs(static_cast<int64_t>((time - average).count())) / average.count()) * 100;
-            std::cout << "% error: " << percent_error << std::endl;
+            // std::cout << "% error: " << percent_error << std::endl;
             if (percent_error > tolerance)
             {
-                std::cout << percent_error << std::endl;
+                // std::cout << percent_error << std::endl;
                 recheck = true;
-                std::cout << "Rejecting run. Possible outlier. Time: " << time.count() << "\tAvg: " << average.count() << std::endl;
+                // std::cout << "Rejecting run. Possible outlier. Time: " << time.count() << "\tAvg: " << average.count() << std::endl;
                 std::chrono::milliseconds new_time;
                 do
                 {
@@ -573,5 +591,18 @@ std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm
     algorithm(data_copy.data(), 0, data_copy.size() - 1);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    if (!std::is_sorted(data_copy.begin(), data_copy.end()))
+    {
+        throw std::runtime_error("Array not sorted!");
+    }
     return duration;
+}
+
+std::chrono::milliseconds test_ints_random_fixed_size(sorting_algorithm<int> algorithm, size_t n, size_t test_count, double tolerance)
+{
+    std::vector<int> original;
+    original.resize(n);
+    std::minstd_rand rng;
+    std::generate_n(original.begin(), n, rng);
+    return test_ints_perform_run_n_times(algorithm, original, test_count, tolerance);
 }
