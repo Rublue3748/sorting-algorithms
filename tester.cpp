@@ -76,8 +76,8 @@ size_t test_ints_all_same_fixed_size_1M(sorting_algorithm<int> algorithm, std::s
     return test_ints_all_same_fixed_size_N<1000000>(algorithm, name);
 }
 
-// Sorting algorithms: ShellSort (Variants), MergeSort, Quicksort, HeapSort, InPlaceMergeSort
-// Done: BubbleSort, SelectionSort, GnomeSort, InsertionSort
+// Sorting algorithms:  MergeSort, Quicksort variants (Median of three, with equal value correction), InPlaceMergeSort
+// Done: BubbleSort, SelectionSort, GnomeSort, InsertionSort, ShellSort (Variants), Quicksort (+Randomized), HeapSort
 // Also: Counting sort, Radix sort, and Bucket sort
 
 int main()

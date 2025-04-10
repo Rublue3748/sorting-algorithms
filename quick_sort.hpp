@@ -27,7 +27,8 @@ template <typename T>
 size_t _Randomized_Partition(T *data, size_t front, size_t back)
 {
     std::minstd_rand gen;
-    std::swap(data[back], data[gen()]);
+    std::uniform_int_distribution dist(front, back);
+    std::swap(data[back], data[dist(gen)]);
     return _Partition(data, front, back);
 }
 
