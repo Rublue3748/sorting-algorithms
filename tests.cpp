@@ -17,6 +17,16 @@ std::chrono::milliseconds test_ints_perform_run(sorting_algorithm<int> algorithm
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     if (!std::is_sorted(data_copy.begin(), data_copy.end()))
     {
+        std::cerr << "\n";
+        size_t i = 0;
+        for (int val : data_copy)
+        {
+            std::cerr << i << ": " << val << " ";
+            i++;
+        }
+        std::cerr << "\n";
+        auto iter = std::is_sorted_until(data_copy.begin(), data_copy.end());
+        std::cerr << "Is sorted until: " << *(iter - 1) << ", " << *iter << std::endl;
         throw std::runtime_error("Array not sorted!");
     }
     return duration;

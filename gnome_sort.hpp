@@ -2,27 +2,30 @@
 #include <utility>
 #include <cstddef>
 
-template <typename T>
-void Gnome_Sort(T *data, size_t front, size_t back)
+namespace Gnome_Sort
 {
-    size_t i = front;
-    while (i < back)
+    template <typename T>
+    void Gnome_Sort(T *data, size_t front, size_t back)
     {
-        if (data[i + 1] < data[i])
+        size_t i = front;
+        while (i < back)
         {
-            std::swap(data[i], data[i + 1]);
-            if (i > front)
+            if (data[i + 1] < data[i])
             {
-                i--;
+                std::swap(data[i], data[i + 1]);
+                if (i > front)
+                {
+                    i--;
+                }
+                else
+                {
+                    i++;
+                }
             }
             else
             {
                 i++;
             }
-        }
-        else
-        {
-            i++;
         }
     }
 }

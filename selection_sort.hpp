@@ -2,19 +2,22 @@
 #include <utility>
 #include <cstddef>
 
-template <typename T>
-void Selection_Sort(T *data, size_t front, size_t back)
+namespace Selection_Sort
 {
-    for (size_t start = front; start < back; start++)
+    template <typename T>
+    void Selection_Sort(T *data, size_t front, size_t back)
     {
-        size_t min_index = start;
-        for (size_t i = start + 1; i <= back; i++)
+        for (size_t start = front; start < back; start++)
         {
-            if (data[i] < data[min_index])
+            size_t min_index = start;
+            for (size_t i = start + 1; i <= back; i++)
             {
-                min_index = i;
+                if (data[i] < data[min_index])
+                {
+                    min_index = i;
+                }
             }
+            std::swap(data[start], data[min_index]);
         }
-        std::swap(data[start], data[min_index]);
     }
 }

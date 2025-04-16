@@ -3,18 +3,21 @@
 #include <utility>
 #include <cstddef>
 
-template <typename T>
-void Insertion_Sort(T *data, size_t front, size_t back)
+namespace Insertion_Sort
 {
-    for (size_t i = front + 1; i <= back; i++)
+    template <typename T>
+    void Insertion_Sort(T *data, size_t front, size_t back)
     {
-        size_t j = i;
-        T old_data = data[j];
-        while (j != front && old_data < data[j - 1])
+        for (size_t i = front + 1; i <= back; i++)
         {
-            data[j] = data[j - 1];
-            j--;
+            size_t j = i;
+            T old_data = data[j];
+            while (j != front && old_data < data[j - 1])
+            {
+                data[j] = data[j - 1];
+                j--;
+            }
+            data[j] = old_data;
         }
-        data[j] = old_data;
     }
 }
